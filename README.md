@@ -41,13 +41,13 @@ bash <(curl -Ls https://raw.githubusercontent.com/nikannixro/movies-metadata-org
 
 ### Windows
 
-Download and run `use.bat`:
+Open **PowerShell as Administrator** and run:
 
 ```powershell
 irm https://raw.githubusercontent.com/nikannixro/movies-metadata-organizer/main/use.bat -OutFile use.bat; .\use.bat
 ```
 
-Or download `use.bat` manually from the repository and double-click it.
+This installs all dependencies, sets up the repository, and launches the application automatically.
 
 ---
 
