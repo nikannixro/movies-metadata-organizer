@@ -85,6 +85,10 @@ install_deps_windows() {
     if ! has mkvmerge; then
         info "Installing MKVToolNix..."
         winget install --id MoritzBunkus.MKVToolNix -e --source winget --installer-type portable --accept-package-agreements --accept-source-agreements
+        # If portable didn't work, try adding default install location to PATH
+        if ! has mkvmerge && [ -d "/c/Program Files/MKVToolNix" ]; then
+            export PATH="$PATH:/c/Program Files/MKVToolNix"
+        fi
     fi
     if ! has ffmpeg; then
         info "Installing ffmpeg..."
