@@ -41,9 +41,9 @@ bash <(curl -Ls https://raw.githubusercontent.com/nikannixro/movies-metadata-org
 
 ### Windows
 
-Open **PowerShell** or **CMD** and run:
+Open **Git Bash** (comes with [Git for Windows](https://git-scm.com/download/win)) and run:
 
-```powershell
+```bash
 curl.exe -Ls https://raw.githubusercontent.com/nikannixro/movies-metadata-organizer/main/use.sh | bash
 ```
 

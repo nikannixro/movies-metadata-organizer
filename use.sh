@@ -20,7 +20,7 @@ has()   { command -v "$1" >/dev/null 2>&1; }
 detect_os() {
     case "$(uname -s)" in
         Linux*)
-            if [ -n "${WSL_DISTRO_NAME:-}" ]; then
+            if [ -n "${WSL_DISTRO_NAME:-}" ] && [ -f /proc/sys/fs/binfmt_misc/WSLInterop ]; then
                 OS="wsl"
             else
                 OS="linux"
@@ -118,6 +118,8 @@ setup_and_run() {
     info "Starting Movies Metadata Organizer..."
     if has python3; then
         python3 -m src.main
+    elif has py; then
+        py -m src.main
     else
         python -m src.main
     fi
