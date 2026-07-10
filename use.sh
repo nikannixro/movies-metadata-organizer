@@ -69,37 +69,29 @@ install_deps_macos() {
 
 install_deps_windows() {
     info "Detected Windows (Git Bash / MSYS2)."
-    local missing=0
+
     if ! has git; then
-        err "Git is not installed."
-        err "Install it: winget install --id Git.Git -e --source winget"
-        missing=1
+        info "Installing Git..."
+        winget install --id Git.Git -e --source winget --accept-package-agreements --accept-source-agreements
     fi
-    if ! has python3 && ! has python; then
-        err "Python 3 is not installed."
-        err "Install it: winget install --id Python.Python.3.12 -e --source winget"
-        missing=1
+    if ! has python && ! has python3; then
+        info "Installing Python..."
+        winget install --id Python.Python.3.12 -e --source winget --accept-package-agreements --accept-source-agreements
     fi
-    if ! has pip3 && ! has pip; then
-        err "pip is not installed."
-        err "Install it: python -m ensurepip --upgrade"
-        missing=1
+    if ! has pip && ! has pip3; then
+        info "Installing pip..."
+        python -m ensurepip --upgrade
     fi
     if ! has mkvmerge; then
-        err "MKVToolNix is not installed."
-        err "Install it: winget install --id MoritzBunkus.MKVToolNix -e --source winget --installer-type portable"
-        err "Or download from: https://mkvtoolnix.org/downloads.html"
-        missing=1
+        info "Installing MKVToolNix..."
+        winget install --id MoritzBunkus.MKVToolNix -e --source winget --accept-package-agreements --accept-source-agreements
     fi
     if ! has ffmpeg; then
-        err "ffmpeg is not installed."
-        err "Install it: winget install --id Gyan.FFmpeg -e --source winget"
-        missing=1
+        info "Installing ffmpeg..."
+        winget install --id Gyan.FFmpeg -e --source winget --accept-package-agreements --accept-source-agreements
     fi
-    if [ "$missing" -eq 1 ]; then
-        exit 1
-    fi
-    ok "Required tools found (git, python, pip, mkvmerge, ffmpeg)."
+
+    ok "All required tools are installed."
 }
 
 # --- Clone repo -------------------------------------------------------------
