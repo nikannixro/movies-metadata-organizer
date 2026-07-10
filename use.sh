@@ -25,13 +25,16 @@ detect_os() {
 
     case "$(uname -s)" in
         Linux*)
-            if [ -n "${WSL_DISTRO_NAME:-}" ]; then
-                OS="wsl"
-                DISTRO="${WSL_DISTRO_NAME}"
-            else
-                OS="linux"
-                detect_distro
-            fi
+            case "$(uname -o)" in
+                GNU/Linux)
+                    OS="linux"
+                    detect_distro
+                    ;;
+                *)
+                    OS="wsl"
+                    DISTRO="${WSL_DISTRO_NAME:-unknown}"
+                    ;;
+            esac
             ;;
         Darwin*)
             OS="macos"
@@ -222,8 +225,10 @@ update_repo() {
 install_python_deps() {
     info "Installing Python dependencies..."
     if has pip3; then
+        pip3 install -r requirements.txt --break-system-packages 2>/dev/null || \
         pip3 install -r requirements.txt
     elif has pip; then
+        pip install -r requirements.txt --break-system-packages 2>/dev/null || \
         pip install -r requirements.txt
     fi
     ok "Python dependencies installed."

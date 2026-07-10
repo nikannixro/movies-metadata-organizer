@@ -33,7 +33,13 @@ tracks, and renames files to a consistent release-style naming convention.
 
 ## Quick Start
 
-### Linux / WSL / macOS
+### Linux / WSL
+
+```bash
+bash <(curl -Ls https://raw.githubusercontent.com/nikannixro/movies-metadata-organizer/main/use.sh)
+```
+
+### macOS
 
 ```bash
 bash <(curl -Ls https://raw.githubusercontent.com/nikannixro/movies-metadata-organizer/main/use.sh)
@@ -42,10 +48,10 @@ bash <(curl -Ls https://raw.githubusercontent.com/nikannixro/movies-metadata-org
 ### Windows (PowerShell)
 
 ```powershell
-irm https://raw.githubusercontent.com/nikannixro/movies-metadata-organizer/main/use.sh | bash
+$f="$env:TEMP\use.sh"; irm https://raw.githubusercontent.com/nikannixro/movies-metadata-organizer/main/use.sh | Out-File -Encoding Byte $f; bash $f; Remove-Item $f
 ```
 
-> Requires **Git Bash** (comes with [Git for Windows](https://git-scm.com/download/win)).
+> Requires **Git for Windows** ([download](https://git-scm.com/download/win)).
 
 ---
 
