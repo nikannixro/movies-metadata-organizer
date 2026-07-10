@@ -1,1 +1,1 @@
-"""Utility helpers for the MKV metadata editor."""
+"""Utility helpers for Movies Metadata Organizer."""

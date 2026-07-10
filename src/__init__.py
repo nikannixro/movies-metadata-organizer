@@ -1,1 +1,1 @@
-"""MKV metadata editor package."""
+"""Movies Metadata Organizer package."""

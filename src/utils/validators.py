@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import shutil
 from pathlib import Path
-from typing import Optional
 
 from .constants import (
     FFPROBE_BIN,
@@ -19,7 +18,7 @@ class ValidationError(Exception):
     """Raised when user-supplied input is invalid."""
 
 
-def resolve_binary(name: str, explicit_path: Optional[str | Path] = None) -> Path:
+def resolve_binary(name: str, explicit_path: str | Path | None = None) -> Path:
     """Resolve a binary path.
 
     If `explicit_path` is given, verify it exists and is a file.
@@ -63,7 +62,7 @@ def validate_output_directory(path: str | Path, label: str = "output directory")
     return p.resolve()
 
 
-def validate_subtitle_directory(path: Optional[str | Path]) -> Optional[Path]:
+def validate_subtitle_directory(path: str | Path | None) -> Path | None:
     """Validate optional subtitle folder. Returns None if empty input."""
     if path is None or str(path).strip() == "":
         return None
@@ -83,8 +82,8 @@ def validate_language_code(code: str, default: str = "en") -> str:
 
 
 def validate_mkvtoolnix_available(
-    mkvmerge_path: Optional[str | Path] = None,
-    mkvpropedit_path: Optional[str | Path] = None,
+    mkvmerge_path: str | Path | None = None,
+    mkvpropedit_path: str | Path | None = None,
 ) -> tuple[Path, Path]:
     """Resolve and validate MKVToolNix binaries. Returns (mkvmerge, mkvpropedit)."""
     mm = resolve_binary(MKVMERGE_BIN, mkvmerge_path)
@@ -93,7 +92,7 @@ def validate_mkvtoolnix_available(
 
 
 def validate_ffprobe_available(
-    ffprobe_path: Optional[str | Path] = None,
+    ffprobe_path: str | Path | None = None,
 ) -> Path:
     """Resolve and validate ffprobe. Returns the ffprobe path."""
     return resolve_binary(FFPROBE_BIN, ffprobe_path)

@@ -39,13 +39,27 @@ tracks, and renames files to a consistent release-style naming convention.
 bash <(curl -Ls https://raw.githubusercontent.com/nikannixro/movies-metadata-organizer/main/use.sh)
 ```
 
-### Windows
+### Windows (PowerShell)
 
-Open **Git Bash** (comes with [Git for Windows](https://git-scm.com/download/win)) and run:
-
-```bash
-curl.exe -Ls https://raw.githubusercontent.com/nikannixro/movies-metadata-organizer/main/use.sh | bash
+```powershell
+irm https://raw.githubusercontent.com/nikannixro/movies-metadata-organizer/main/use.sh | bash
 ```
+
+> Requires **Git Bash** (comes with [Git for Windows](https://git-scm.com/download/win)).
+
+---
+
+## Supported platforms
+
+| Platform | Package manager | Status |
+|----------|----------------|--------|
+| Ubuntu | apt | Supported |
+| Debian | apt | Supported |
+| Linux Mint | apt | Supported |
+| Arch Linux | pacman | Supported |
+| WSL | Same as underlying distro | Supported |
+| macOS | Homebrew | Supported |
+| Windows | winget (Git Bash) | Supported |
 
 ---
 
@@ -112,7 +126,7 @@ Language is always normalized to `en` (e.g. `en-US` becomes `en`).
 
 ```
 movies-metadata-organizer/
-├── use.sh                     # cross-platform startup script
+├── use.sh                     # cross-platform installer and launcher
 ├── src/
 │   ├── main.py                # entry point
 │   ├── cli.py                 # argument parsing + interactive prompts
@@ -122,7 +136,6 @@ movies-metadata-organizer/
 │   │                          # renamer, subtitle_matcher, orchestrator
 │   ├── prompts/               # interactive question helpers
 │   └── utils/                 # constants, logger, validators
-├── config/defaults.yaml       # default settings
 ├── logs/                      # rotating log files
 ├── pyproject.toml             # project metadata
 └── requirements.txt

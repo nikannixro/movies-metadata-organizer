@@ -1,1 +1,1 @@
-"""External tool wrappers and business logic for the MKV editor."""
+"""External tool wrappers and business logic for Movies Metadata Organizer."""

@@ -75,7 +75,7 @@ class MediaFile:
             )
         return MOVIE_SEGMENT_TITLE_TEMPLATE.format(
             title=self.title.strip(),
-            year=int(self.year or 0),
+            year=self.year if self.year is not None else 0,
         )
 
     @property
@@ -94,7 +94,7 @@ class MediaFile:
             )
         return MOVIE_NAME_TEMPLATE.format(
             title=self.title.strip(),
-            year=int(self.year or 0),
+            year=self.year if self.year is not None else 0,
             quality=self.quality or "1080p",
             source=self.source_type or "WEB-DL",
             codec=self.codec or "x265",

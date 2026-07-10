@@ -65,7 +65,10 @@ def remux_subtitles(
 
     log.debug(f"Running: {' '.join(cmd)}")
     try:
-        subprocess.run(cmd, check=True, capture_output=True, text=True, encoding="utf-8")
+        subprocess.run(
+            cmd, check=True, capture_output=True, text=True,
+            encoding="utf-8", timeout=600,
+        )
     except subprocess.CalledProcessError as exc:
         log.error(f"mkvmerge failed: {exc.stderr}")
         raise ValidationError(f"mkvmerge failed: {exc.stderr}")

@@ -8,8 +8,11 @@ from ..config import Config
 from ..models.media_file import MediaFile
 from ..models.track import Track
 from ..utils.constants import (
+    DEFAULT_AUDIO_NAME,
     DEFAULT_SUBTITLE_LANGUAGE_EN,
     DEFAULT_SUBTITLE_LANGUAGE_FA,
+    DEFAULT_SUBTITLE_NAME,
+    DEFAULT_VIDEO_NAME,
     TRACK_TYPE_SELECTOR,
 )
 from ..utils.logger import get_logger
@@ -18,37 +21,33 @@ from ..utils.validators import ValidationError
 log = get_logger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# Per-track resolution helpers
-# ---------------------------------------------------------------------------
-def _resolve_language(track: Track) -> str:
-    """Pick the desired language code for a track."""
+def _resolve_language(track: Track) -> str | None:
+    """Pick the desired language code for a track. None means caller decides."""
     if track.is_video:
         return "en"
     if track.is_audio:
-        return None  # handled by caller (audio_language)
+        return None
     if track.is_subtitle:
         if track.is_english:
             return DEFAULT_SUBTITLE_LANGUAGE_EN
         if track.is_persian:
             return DEFAULT_SUBTITLE_LANGUAGE_FA
-        return track.language  # keep unknown languages as-is
+        return track.language
     return track.language
 
 
 def _resolve_name(track: Track) -> str:
     """Pick the desired track name."""
     if track.is_video:
-        return "Video"
+        return DEFAULT_VIDEO_NAME
     if track.is_audio:
-        return "Audio"
+        return DEFAULT_AUDIO_NAME
     if track.is_subtitle:
         if track.is_english:
-            # SDH is detected from the existing/already-set track name.
             if "sdh" in track.raw_name.lower():
                 return "English [SDH]"
             return "English"
-        return "Subtitle"  # Persian and any other subtitle
+        return DEFAULT_SUBTITLE_NAME
     return track.raw_name
 
 
@@ -63,7 +62,7 @@ def _resolve_default_flag(track: Track) -> bool:
             return False
         if track.is_persian:
             return True
-        return False  # other subtitle: not default
+        return False
     return track.is_default
 
 
@@ -78,7 +77,7 @@ def _resolve_forced_flag(track: Track) -> bool:
             return False
         if track.is_persian:
             return True
-        return False  # other subtitle: not forced
+        return False
     return track.is_forced
 
 
@@ -88,7 +87,6 @@ def compute_track_updates(media: MediaFile, config: Config) -> list[dict[str, An
     for track in media.tracks:
         lang = _resolve_language(track)
         if track.is_audio:
-            # Per-file selection (if any) takes priority over the batch default.
             lang = (
                 media.selected_audio_language
                 or config.audio_language
@@ -125,13 +123,11 @@ def apply_metadata_to_tracks(
 
     args: list[str] = [str(config.mkvpropedit_path), str(media.output_path)]
 
-    # Segment (container) title
     args.append("--edit")
     args.append("info")
     args.append("--set")
     args.append(f"title={media.segment_title}")
 
-    # Per-track edits
     for u in updates:
         ttype = u["type"]
         sel = TRACK_TYPE_SELECTOR.get(ttype)
@@ -151,7 +147,7 @@ def apply_metadata_to_tracks(
         args.append("--set")
         args.append(f"flag-forced={'yes' if u['forced'] else 'no'}")
 
-    _run_mkvpropedit(args, media.output_path)
+    _run_mkvpropedit(args)
     log.info(f"Updated metadata (title + tracks): {media.output_path}")
 
 
@@ -179,14 +175,17 @@ def remove_image_attachments(
         args.append("--delete-attachment")
         args.append(str(att_id))
 
-    _run_mkvpropedit(args, media.output_path)
+    _run_mkvpropedit(args)
     log.info(f"Removed {len(image_atts)} image attachment(s): {media.output_path}")
 
 
-def _run_mkvpropedit(args: list[str], target: Path) -> None:
+def _run_mkvpropedit(args: list[str]) -> None:
     log.debug(f"Running: {' '.join(args)}")
     try:
-        subprocess.run(args, check=True, capture_output=True, text=True, encoding="utf-8")
+        subprocess.run(
+            args, check=True, capture_output=True, text=True,
+            encoding="utf-8", timeout=120,
+        )
     except subprocess.CalledProcessError as exc:
         log.error(f"mkvpropedit failed: {exc.stderr}")
         raise ValidationError(f"mkvpropedit failed: {exc.stderr}")

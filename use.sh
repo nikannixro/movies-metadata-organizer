@@ -1,39 +1,85 @@
 #!/usr/bin/env bash
 # ============================================================================
-# Movies Metadata Organizer — cross-platform startup script
-# Supports: Linux, WSL, macOS, Windows (Git Bash)
+# Movies Metadata Organizer — cross-platform installer and launcher
+# Supported: Windows (Git Bash), WSL, Ubuntu, Debian, Linux Mint,
+#            Arch Linux, macOS
 # ============================================================================
 set -euo pipefail
 
 REPO_URL="https://github.com/nikannixro/movies-metadata-organizer.git"
-REPO_DIR="movies-metadata-organizer"
+REPO_NAME="movies-metadata-organizer"
 
-# --- Helpers ----------------------------------------------------------------
+# --- Output helpers ---------------------------------------------------------
 
 info()  { printf "\033[1;34m=== %s ===\033[0m\n" "$*"; }
 ok()    { printf "\033[1;32m--- %s ---\033[0m\n" "$*"; }
+warn()  { printf "\033[1;33mWARNING: %s\033[0m\n" "$*" >&2; }
 err()   { printf "\033[1;31mERROR: %s\033[0m\n" "$*" >&2; }
 has()   { command -v "$1" >/dev/null 2>&1; }
 
-# --- Detect OS --------------------------------------------------------------
+# --- OS and distro detection -----------------------------------------------
 
 detect_os() {
+    OS=""
+    DISTRO=""
+
     case "$(uname -s)" in
         Linux*)
-            if [ -n "${WSL_DISTRO_NAME:-}" ] && [ -f /proc/sys/fs/binfmt_misc/WSLInterop ]; then
+            if [ -n "${WSL_DISTRO_NAME:-}" ]; then
                 OS="wsl"
+                DISTRO="${WSL_DISTRO_NAME}"
             else
                 OS="linux"
+                detect_distro
             fi
             ;;
-        Darwin*)               OS="macos" ;;
-        MINGW*|MSYS*|CYGWIN*) OS="windows" ;;
-        *)                     err "Unsupported OS: $(uname -s)"; exit 1 ;;
+        Darwin*)
+            OS="macos"
+            ;;
+        MINGW*|MSYS*|CYGWIN*)
+            OS="windows"
+            ;;
+        *)
+            err "Unsupported operating system: $(uname -s)"
+            exit 1
+            ;;
     esac
-    info "Detected OS: $OS"
+
+    info "Detected OS: ${OS}${DISTRO:+ ($DISTRO)}"
 }
 
-# --- Root check (Linux / WSL only) ------------------------------------------
+detect_distro() {
+    if [ ! -f /etc/os-release ]; then
+        err "Cannot detect Linux distribution (/etc/os-release not found)."
+        err "Unsupported operating system."
+        exit 1
+    fi
+
+    # shellcheck disable=SC1091
+    . /etc/os-release
+
+    case "${ID:-}" in
+        ubuntu)              DISTRO="ubuntu" ;;
+        debian)              DISTRO="debian" ;;
+        linuxmint)           DISTRO="linuxmint" ;;
+        arch|manjaro|endeavouros) DISTRO="arch" ;;
+        fedora|centos|rhel|rocky|alma) DISTRO="unsupported" ;;
+        *)
+            case "${ID_LIKE:-}" in
+                ubuntu|debian) DISTRO="debian" ;;
+                arch)          DISTRO="arch" ;;
+                *)             DISTRO="unsupported" ;;
+            esac
+            ;;
+    esac
+
+    if [ "$DISTRO" = "unsupported" ]; then
+        err "Unsupported operating system: ${PRETTY_NAME:-$ID}"
+        exit 1
+    fi
+}
+
+# --- Root check (Linux/WSL apt/pacman require root) -------------------------
 
 check_root() {
     if [ "$OS" = "linux" ] || [ "$OS" = "wsl" ]; then
@@ -46,95 +92,161 @@ check_root() {
     fi
 }
 
-# --- Install dependencies ---------------------------------------------------
+# --- Dependency installation ------------------------------------------------
 
-install_deps_linux() {
-    info "Installing system packages (apt)..."
-    apt update
-    apt upgrade -y
-    apt install -y mkvtoolnix ffmpeg git-all python3-pip
-    ok "System packages installed."
-}
-
-install_deps_macos() {
-    if ! has brew; then
-        err "Homebrew is not installed."
-        err "Install it from https://brew.sh and re-run this script."
-        exit 1
-    fi
-    info "Installing system packages (brew)..."
-    brew install ffmpeg mkvtoolnix git python
-    ok "System packages installed."
+install_deps() {
+    case "$OS" in
+        windows) install_deps_windows ;;
+        macos)   install_deps_macos ;;
+        linux|wsl)
+            case "$DISTRO" in
+                ubuntu|debian|linuxmint) install_deps_debian ;;
+                arch)                    install_deps_arch ;;
+            esac
+            ;;
+    esac
 }
 
 install_deps_windows() {
-    info "Detected Windows (Git Bash / MSYS2)."
+    info "Installing dependencies (winget)..."
 
     if ! has git; then
         info "Installing Git..."
-        winget install --id Git.Git -e --source winget --accept-package-agreements --accept-source-agreements
+        winget install --id Git.Git -e --source winget \
+            --accept-package-agreements --accept-source-agreements
     fi
     if ! has python && ! has python3; then
         info "Installing Python..."
-        winget install --id Python.Python.3.12 -e --source winget --accept-package-agreements --accept-source-agreements
+        winget install --id Python.Python.3.12 -e --source winget \
+            --accept-package-agreements --accept-source-agreements
     fi
     if ! has pip && ! has pip3; then
         info "Installing pip..."
-        python -m ensurepip --upgrade
+        python -m ensurepip --upgrade 2>/dev/null || python3 -m ensurepip --upgrade
     fi
     if ! has mkvmerge; then
         info "Installing MKVToolNix..."
-        winget install --id MoritzBunkus.MKVToolNix -e --source winget --installer-type portable --accept-package-agreements --accept-source-agreements
-        # If portable didn't work, try adding default install location to PATH
+        winget install --id MoritzBunkus.MKVToolNix -e --source winget \
+            --installer-type portable \
+            --accept-package-agreements --accept-source-agreements
         if ! has mkvmerge && [ -d "/c/Program Files/MKVToolNix" ]; then
             export PATH="$PATH:/c/Program Files/MKVToolNix"
         fi
     fi
     if ! has ffmpeg; then
         info "Installing ffmpeg..."
-        winget install --id Gyan.FFmpeg -e --source winget --accept-package-agreements --accept-source-agreements
+        winget install --id Gyan.FFmpeg -e --source winget \
+            --accept-package-agreements --accept-source-agreements
     fi
 
-    ok "All required tools are installed."
+    ok "All system dependencies installed."
 }
 
-# --- Clone repo -------------------------------------------------------------
+install_deps_debian() {
+    info "Installing dependencies (apt)..."
+    apt update -y
+    apt install -y git python3 python3-pip mkvtoolnix ffmpeg
+    ok "All system dependencies installed."
+}
+
+install_deps_arch() {
+    info "Installing dependencies (pacman)..."
+    pacman -Sy --noconfirm git python python-pip mkvtoolnix ffmpeg
+    ok "All system dependencies installed."
+}
+
+install_deps_macos() {
+    info "Installing dependencies (brew)..."
+    if ! has brew; then
+        info "Installing Homebrew..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    fi
+    brew install git python mkvtoolnix ffmpeg
+    ok "All system dependencies installed."
+}
+
+# --- Repository management --------------------------------------------------
+
+manage_repo() {
+    local target_dir
+    target_dir="$(pwd)/${REPO_NAME}"
+
+    if [ -d "$target_dir/.git" ]; then
+        local remote
+        remote="$(git -C "$target_dir" remote get-url origin 2>/dev/null || echo "")"
+        if [ "$remote" = "$REPO_URL" ] || [ "$remote" = "${REPO_URL%.git}.git" ]; then
+            update_repo "$target_dir"
+        else
+            err "Directory exists but is not the correct repository."
+            err "Expected: $REPO_URL"
+            err "Found:    $remote"
+            exit 1
+        fi
+    else
+        clone_repo "$target_dir"
+    fi
+
+    cd "$target_dir"
+}
 
 clone_repo() {
-    if [ -d "$REPO_DIR/src" ]; then
-        info "Repository already exists at ./$REPO_DIR — skipping clone."
-    else
-        info "Cloning repository..."
-        git clone "$REPO_URL"
-        ok "Repository cloned."
-    fi
-    cd "$REPO_DIR"
+    local target_dir="$1"
+    info "Cloning repository..."
+    git clone "$REPO_URL"
+    ok "Repository cloned."
 }
 
-# --- Main -------------------------------------------------------------------
+update_repo() {
+    local target_dir="$1"
+    info "Repository found. Checking for updates..."
+
+    git -C "$target_dir" fetch origin --quiet
+
+    local local_hash remote_hash
+    local_hash="$(git -C "$target_dir" rev-parse HEAD)"
+    remote_hash="$(git -C "$target_dir" rev-parse origin/main 2>/dev/null || \
+                   git -C "$target_dir" rev-parse origin/master 2>/dev/null || \
+                   echo "$local_hash")"
+
+    if [ "$local_hash" = "$remote_hash" ]; then
+        ok "Already up to date."
+    else
+        info "Updates available. Pulling..."
+        git -C "$target_dir" pull --quiet
+        ok "Updated to latest version."
+    fi
+}
+
+# --- Python dependencies and app launch -------------------------------------
+
+install_python_deps() {
+    info "Installing Python dependencies..."
+    if has pip3; then
+        pip3 install -r requirements.txt
+    elif has pip; then
+        pip install -r requirements.txt
+    fi
+    ok "Python dependencies installed."
+}
+
+run_app() {
+    info "Starting Movies Metadata Organizer..."
+    if has python3; then
+        python3 -m src.main
+    elif has python; then
+        python -m src.main
+    fi
+}
+
+# --- Entry point ------------------------------------------------------------
 
 main() {
     detect_os
     check_root
-
-    case "$OS" in
-        linux|wsl) install_deps_linux ;;
-        macos)     install_deps_macos ;;
-        windows)   install_deps_windows ;;
-    esac
-
-    clone_repo
-    info "Installing Python dependencies..."
-    if has pip; then
-        pip install -r requirements.txt
-    elif has pip3; then
-        pip3 install -r requirements.txt
-    fi
-    ok "Python dependencies installed."
-
-    info "All done! To start the app, run:"
-    info "  cd $REPO_DIR"
-    info "  python -m src.main"
+    install_deps
+    manage_repo
+    install_python_deps
+    run_app
 }
 
 main "$@"
