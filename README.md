@@ -44,7 +44,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/nikannixro/movies-metadata-org
 Open **PowerShell** and run:
 
 ```powershell
-irm https://raw.githubusercontent.com/nikannixro/movies-metadata-organizer/main/use.sh | bash
+curl -Ls https://raw.githubusercontent.com/nikannixro/movies-metadata-organizer/main/use.sh | bash
 ```
 
 ---
