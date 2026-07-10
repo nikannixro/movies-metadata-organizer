@@ -41,10 +41,10 @@ bash <(curl -Ls https://raw.githubusercontent.com/nikannixro/movies-metadata-org
 
 ### Windows
 
-Open **PowerShell** and run:
+Open **PowerShell** or **CMD** and run:
 
 ```powershell
-curl -Ls https://raw.githubusercontent.com/nikannixro/movies-metadata-organizer/main/use.sh | bash
+curl.exe -Ls https://raw.githubusercontent.com/nikannixro/movies-metadata-organizer/main/use.sh | bash
 ```
 
 ---
