@@ -41,16 +41,10 @@ bash <(curl -Ls https://raw.githubusercontent.com/nikannixro/movies-metadata-org
 
 ### Windows
 
-First, install Git if it is not already installed:
+Open **PowerShell** and run:
 
-```bash
-winget install --id Git.Git -e --source winget
-```
-
-Then run the same command as Linux / WSL / macOS (requires WSL or Git Bash):
-
-```bash
-bash <(curl -Ls https://raw.githubusercontent.com/nikannixro/movies-metadata-organizer/main/use.sh)
+```powershell
+irm https://raw.githubusercontent.com/nikannixro/movies-metadata-organizer/main/use.sh | bash
 ```
 
 ---
