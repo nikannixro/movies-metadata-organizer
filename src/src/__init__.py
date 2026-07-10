@@ -1,0 +1,1 @@
+"""Movies Metadata Organizer package."""

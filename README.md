@@ -39,11 +39,15 @@ tracks, and renames files to a consistent release-style naming convention.
 bash <(curl -Ls https://raw.githubusercontent.com/nikannixro/movies-metadata-organizer/main/use.sh)
 ```
 
-### Windows (PowerShell)
+### Windows
+
+Download and run `use.bat`:
 
 ```powershell
-$f=($env:TEMP+'\use.sh').Replace('\','/'); [System.IO.File]::WriteAllText($f, (irm https://raw.githubusercontent.com/nikannixro/movies-metadata-organizer/main/use.sh), (New-Object System.Text.UTF8Encoding $false)); bash $f; Remove-Item $f
+irm https://raw.githubusercontent.com/nikannixro/movies-metadata-organizer/main/use.bat -OutFile use.bat; .\use.bat
 ```
+
+Or download `use.bat` manually from the repository and double-click it.
 
 ---
 
@@ -57,7 +61,7 @@ $f=($env:TEMP+'\use.sh').Replace('\','/'); [System.IO.File]::WriteAllText($f, (i
 | Arch Linux | pacman | Supported |
 | WSL | Same as underlying distro | Supported |
 | macOS | Homebrew | Supported |
-| Windows | winget (Git Bash) | Supported |
+| Windows | winget (use.bat) | Supported |
 
 ---
 

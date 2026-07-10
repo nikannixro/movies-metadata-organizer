@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================================
-# Movies Metadata Organizer — cross-platform installer and launcher
-# Supported: Windows (Git Bash), WSL, Ubuntu, Debian, Linux Mint,
-#            Arch Linux, macOS
+# Movies Metadata Organizer — Unix/macOS installer and launcher
+# Supported: Ubuntu, Debian, Linux Mint, Arch Linux, WSL, macOS
 # ============================================================================
 set -euo pipefail
 
@@ -39,11 +38,8 @@ detect_os() {
         Darwin*)
             OS="macos"
             ;;
-        MINGW*|MSYS*|CYGWIN*)
-            OS="windows"
-            ;;
         *)
-            err "Unsupported operating system: $(uname -s)"
+            err "Unsupported operating system: $(uname -s). Use use.bat for Windows."
             exit 1
             ;;
     esac
@@ -82,67 +78,27 @@ detect_distro() {
     fi
 }
 
-# --- Root check (Linux/WSL apt/pacman require root) -------------------------
+# --- Root check (apt/pacman require root) -----------------------------------
 
 check_root() {
-    if [ "$OS" = "linux" ] || [ "$OS" = "wsl" ]; then
-        if [ "$(id -u)" -ne 0 ]; then
-            err "You are not running as root."
-            err "Please run this script as root or using sudo."
-            err "Installation cancelled."
-            exit 1
-        fi
+    if [ "$(id -u)" -ne 0 ]; then
+        err "You are not running as root."
+        err "Please run this script as root or using sudo."
+        err "Installation cancelled."
+        exit 1
     fi
 }
 
 # --- Dependency installation ------------------------------------------------
 
 install_deps() {
-    case "$OS" in
-        windows) install_deps_windows ;;
-        macos)   install_deps_macos ;;
-        linux|wsl)
-            case "$DISTRO" in
-                ubuntu|debian|linuxmint) install_deps_debian ;;
-                arch)                    install_deps_arch ;;
-            esac
-            ;;
+    case "$DISTRO" in
+        ubuntu|debian|linuxmint) install_deps_debian ;;
+        arch)                    install_deps_arch ;;
     esac
-}
-
-install_deps_windows() {
-    info "Installing dependencies (winget)..."
-
-    if ! has git; then
-        info "Installing Git..."
-        winget install --id Git.Git -e --source winget \
-            --accept-package-agreements --accept-source-agreements
+    if [ "$OS" = "macos" ]; then
+        install_deps_macos
     fi
-    if ! has python && ! has python3; then
-        info "Installing Python..."
-        winget install --id Python.Python.3.12 -e --source winget \
-            --accept-package-agreements --accept-source-agreements
-    fi
-    if ! has pip && ! has pip3; then
-        info "Installing pip..."
-        python -m ensurepip --upgrade 2>/dev/null || python3 -m ensurepip --upgrade
-    fi
-    if ! has mkvmerge; then
-        info "Installing MKVToolNix..."
-        winget install --id MoritzBunkus.MKVToolNix -e --source winget \
-            --installer-type portable \
-            --accept-package-agreements --accept-source-agreements
-        if ! has mkvmerge && [ -d "/c/Program Files/MKVToolNix" ]; then
-            export PATH="$PATH:/c/Program Files/MKVToolNix"
-        fi
-    fi
-    if ! has ffmpeg; then
-        info "Installing ffmpeg..."
-        winget install --id Gyan.FFmpeg -e --source winget \
-            --accept-package-agreements --accept-source-agreements
-    fi
-
-    ok "All system dependencies installed."
 }
 
 install_deps_debian() {
