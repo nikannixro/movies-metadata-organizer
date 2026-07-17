@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================================
-# Kaelix — Unix/macOS Installer and Launcher
+# Kaelix — Unix/macOS Installer
 # https://github.com/nikannixro/kaelix
 # ============================================================================
 set -euo pipefail
@@ -13,8 +13,6 @@ REPO_NAME="kaelix"
 RED='\033[1;31m'
 GREEN='\033[1;32m'
 YELLOW='\033[1;33m'
-BLUE='\033[1;34m'
-CYAN='\033[1;36m'
 GRAY='\033[0;37m'
 NC='\033[0m'
 
@@ -22,14 +20,9 @@ NC='\033[0m'
 
 banner() {
     echo ""
-    echo -e "${CYAN}  _  __           _    _       ${NC}"
-    echo -e "${CYAN} | |/ /___   __ _| | _| |_ ___ ${NC}"
-    echo -e "${CYAN} | ' // _ \ / _\` | |/ / __/ _ \\${NC}"
-    echo -e "${CYAN} | . \  __/ (_| |   <| ||  __/${NC}"
-    echo -e "${CYAN} |_|\_\___|\__,_|_|\_\\__\___|${NC}"
-    echo ""
-    echo -e "${GRAY}  Automated MKV Metadata Editor${NC}"
-    echo -e "${GRAY}  ─────────────────────────────${NC}"
+    echo -e "${GREEN}=========================================${NC}"
+    echo -e "${GREEN}            K A E L I X${NC}"
+    echo -e "${GREEN}=========================================${NC}"
     echo ""
 }
 
@@ -68,7 +61,7 @@ detect_os() {
             OS="macos"
             ;;
         *)
-            fail "Unsupported operating system: $(uname -s). Use start.ps1 for Windows."
+            fail "Unsupported operating system: $(uname -s). Use install.ps1 for Windows."
             exit 1
             ;;
     esac
@@ -104,15 +97,6 @@ detect_distro() {
     fi
 }
 
-# --- Root check ---------------------------------------------------------------
-
-check_root() {
-    if [ "$(id -u)" -ne 0 ]; then
-        fail "Please run as root or with sudo."
-        exit 1
-    fi
-}
-
 # --- Dependency installation --------------------------------------------------
 
 install_deps() {
@@ -127,14 +111,14 @@ install_deps() {
 
 install_deps_debian() {
     info "Installing dependencies (apt)..."
-    apt update -y -qq
-    apt install -y -qq git python3 python3-pip mkvtoolnix ffmpeg
+    sudo apt update -y -qq
+    sudo apt install -y -qq git python3 python3-pip mkvtoolnix ffmpeg
     ok "System dependencies installed."
 }
 
 install_deps_arch() {
     info "Installing dependencies (pacman)..."
-    pacman -Sy --noconfirm --quiet git python python-pip mkvtoolnix ffmpeg
+    sudo pacman -Sy --noconfirm --quiet git python python-pip mkvtoolnix ffmpeg
     ok "System dependencies installed."
 }
 
@@ -197,7 +181,7 @@ update_repo() {
     fi
 }
 
-# --- Python dependencies and app launch --------------------------------------
+# --- Python dependencies ------------------------------------------------------
 
 install_python_deps() {
     info "Installing Python dependencies..."
@@ -211,16 +195,16 @@ install_python_deps() {
     ok "Dependencies installed."
 }
 
-run_app() {
-    echo ""
-    echo -e "  ${CYAN}Launching Kaelix...${NC}"
-    echo -e "  ${GRAY}───────────────────${NC}"
-    echo ""
-    if has python3; then
-        python3 -m src.main
-    elif has python; then
-        python -m src.main
+install_package() {
+    info "Registering kaelix command..."
+    if has pip3; then
+        pip3 install -e . --break-system-packages -q 2>/dev/null || \
+        pip3 install -e . -q
+    elif has pip; then
+        pip install -e . --break-system-packages -q 2>/dev/null || \
+        pip install -e . -q
     fi
+    ok "Kaelix installed."
 }
 
 # --- Entry point --------------------------------------------------------------
@@ -228,11 +212,14 @@ run_app() {
 main() {
     banner
     detect_os
-    check_root
     install_deps
     manage_repo
     install_python_deps
-    run_app
+    install_package
+    echo ""
+    ok "Installation complete."
+    echo -e "  ${GREEN}Type \"kaelix\" to start.${NC}"
+    echo ""
 }
 
 main "$@"

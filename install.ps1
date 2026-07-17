@@ -1,4 +1,4 @@
-# Kaelix — Windows Installer and Launcher
+# Kaelix — Windows Installer
 # https://github.com/nikannixro/kaelix
 # ============================================================
 $ErrorActionPreference = "Continue"
@@ -11,14 +11,9 @@ $REPO_NAME = "kaelix"
 
 function Show-Banner {
     Write-Host ""
-    Write-Host "  _  __           _    _       " -ForegroundColor Cyan
-    Write-Host " | |/ /___   __ _| | _| |_ ___ " -ForegroundColor Cyan
-    Write-Host " | ' // _ \ / _` | |/ / __/ _ \" -ForegroundColor Cyan
-    Write-Host " | . \  __/ (_| |   <| ||  __/" -ForegroundColor Cyan
-    Write-Host " |_|\_\___|\__,_|_|\_\\__\___|" -ForegroundColor Cyan
-    Write-Host ""
-    Write-Host "  Automated MKV Metadata Editor" -ForegroundColor DarkGray
-    Write-Host "  ─────────────────────────────" -ForegroundColor DarkGray
+    Write-Host "=========================================" -ForegroundColor Green
+    Write-Host "            K A E L I X" -ForegroundColor Green
+    Write-Host "=========================================" -ForegroundColor Green
     Write-Host ""
 }
 
@@ -64,7 +59,6 @@ if ($env:OS -ne "Windows_NT") {
     exit 1
 }
 
-# Allow git operations without admin privileges
 $env:GIT_TERMINAL_PROMPT = "0"
 
 # --- Dependency checks --------------------------------------------------------
@@ -78,15 +72,11 @@ $deps = @(
 )
 
 $step = 0
-$total = $deps.Count + 2  # deps + repo + pip
+$total = $deps.Count + 2
 
 foreach ($dep in $deps) {
     $step++
-    if ($dep.Name -eq "winget") {
-        Write-Step $step $total "Checking for $($dep.Message)..."
-    } else {
-        Write-Step $step $total "Checking for $($dep.Message)..."
-    }
+    Write-Step $step $total "Checking for $($dep.Message)..."
 
     if (Test-Command $dep.Name) {
         Write-OK "$($dep.Name) found."
@@ -116,7 +106,6 @@ if (Test-Path (Join-Path $targetDir ".git")) {
     Write-Host "       Repository found. Checking for updates..." -ForegroundColor Gray
     Push-Location $targetDir
 
-    # Fix permission issues: ensure .git is accessible
     $gitFetchHead = Join-Path ".git" "FETCH_HEAD"
     if (Test-Path $gitFetchHead) {
         try {
@@ -176,13 +165,25 @@ if ($LASTEXITCODE -ne 0) {
 Pop-Location
 Write-OK "Dependencies installed."
 
-# --- Launch -------------------------------------------------------------------
+# --- Register kaelix command --------------------------------------------------
 
-Write-Host ""
-Write-Host "  Launching Kaelix..." -ForegroundColor Cyan
-Write-Host "  ───────────────────" -ForegroundColor DarkGray
-Write-Host ""
-
+$step++
+Write-Step $step $total "Registering kaelix command..."
 Push-Location $targetDir
-python -m src.main
+pip install -e . -q 2>$null
+if ($LASTEXITCODE -ne 0) {
+    Write-Fail "Failed to register kaelix command."
+    Pop-Location
+    exit 1
+}
 Pop-Location
+Write-OK "Kaelix installed."
+
+# --- Done ---------------------------------------------------------------------
+
+Write-Host ""
+Write-Host "  Installation complete." -ForegroundColor Green
+Write-Host "  Type " -NoNewline -ForegroundColor Gray
+Write-Host '"kaelix"' -NoNewline -ForegroundColor Green
+Write-Host " to start." -ForegroundColor Gray
+Write-Host ""

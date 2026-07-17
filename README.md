@@ -39,21 +39,27 @@ tracks, and renames files to a consistent release-style naming convention.
 
 ## Quick Start
 
-### Linux / WSL / macOS
+### 1. Install
+
+**Linux / WSL / macOS:**
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/nikannixro/kaelix/main/start.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/nikannixro/kaelix/main/install.sh)
 ```
 
-### Windows
+**Windows:**
 
 Open **PowerShell** and run:
 
 ```powershell
-irm https://raw.githubusercontent.com/nikannixro/kaelix/main/start.ps1 | iex
+irm https://raw.githubusercontent.com/nikannixro/kaelix/main/install.ps1 | iex
 ```
 
-This installs all dependencies, sets up the repository, and launches the application automatically.
+### 2. Run
+
+```bash
+kaelix
+```
 
 ---
 
@@ -104,19 +110,19 @@ one for Persian/Farsi and one for English.
 
 ```
 kaelix/
-├── start.sh          # Unix/macOS installer and launcher
-├── start.ps1         # Windows installer and launcher
+├── install.sh         # Unix/macOS installer
+├── install.ps1        # Windows installer
 ├── src/
-│   ├── main.py       # Entry point
-│   ├── cli.py        # CLI argument parsing + interactive prompts
-│   ├── config.py     # Run configuration dataclass
-│   ├── models/       # Track, MediaFile data models
-│   ├── services/     # identifier, metadata_editor, remuxer,
-│   │                 # renamer, subtitle_matcher, orchestrator
-│   ├── prompts/      # Interactive question helpers
-│   └── utils/        # Constants, logger, validators
-├── logs/             # Rotating log files
-├── pyproject.toml    # Project metadata
+│   ├── main.py        # Entry point
+│   ├── cli.py         # CLI argument parsing + interactive prompts
+│   ├── config.py      # Run configuration dataclass
+│   ├── models/        # Track, MediaFile data models
+│   ├── services/      # identifier, metadata_editor, remuxer,
+│   │                  # renamer, subtitle_matcher, orchestrator
+│   ├── prompts/       # Interactive question helpers
+│   └── utils/         # Constants, logger, validators
+├── logs/              # Rotating log files
+├── pyproject.toml     # Project metadata
 └── requirements.txt
 ```
 
