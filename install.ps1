@@ -4,40 +4,37 @@
 $ErrorActionPreference = "Continue"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-# --- Auto-Elevation -----------------------------------------------------------
+# --- Auto-Elevation (WinUtil pattern) -----------------------------------------
 
 if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    Write-Host ""
-    Write-Host "=========================================" -ForegroundColor Green
-    Write-Host "            K A E L I X" -ForegroundColor Green
-    Write-Host "=========================================" -ForegroundColor Green
-    Write-Host ""
-    Write-Host "  Administrator privileges required. Elevating..." -ForegroundColor Yellow
-    Write-Host ""
+    $argList = @()
 
-    $url = "https://raw.githubusercontent.com/nikannixro/kaelix/main/install.ps1"
-
-    # Find PowerShell executable (full path to avoid PATH issues in elevated context)
-    $psExe = (Get-Command pwsh -ErrorAction SilentlyContinue).Source
-    if (-not $psExe) {
-        $psExe = Join-Path $env:SystemRoot "System32\WindowsPowerShell\v1.0\powershell.exe"
+    $PSBoundParameters.GetEnumerator() | ForEach-Object {
+        $argList += if ($_.Value -is [switch] -and $_.Value) {
+            "-$($_.Key)"
+        } elseif ($_.Value -is [array]) {
+            "-$($_.Key) $($_.Value -join ',')"
+        } elseif ($_.Value) {
+            "-$($_.Key) '$($_.Value)'"
+        }
     }
 
-    # Build the re-invocation command
     $script = if ($PSCommandPath) {
-        "& { & `'$($PSCommandPath)`' }"
+        "& { & `'$($PSCommandPath)`' $($argList -join ' ') }"
     } else {
-        "&([ScriptBlock]::Create((irm '$url')))"
+        "&([ScriptBlock]::Create((irm https://raw.githubusercontent.com/nikannixro/kaelix/main/install.ps1))) $($argList -join ' ')"
     }
 
-    # Launch elevated (powershell directly, no wt.exe to avoid argument parsing issues)
-    Start-Process -FilePath $psExe -ArgumentList @(
-        "-ExecutionPolicy", "Bypass",
-        "-NoProfile",
-        "-Command", $script
-    ) -Verb RunAs
+    $powershellCmd = if (Get-Command pwsh -ErrorAction SilentlyContinue) { "pwsh" } else { "powershell" }
+    $processCmd = if (Get-Command wt.exe -ErrorAction SilentlyContinue) { "wt.exe" } else { "$powershellCmd" }
 
-    return
+    if ($processCmd -eq "wt.exe") {
+        Start-Process $processCmd -ArgumentList "$powershellCmd -ExecutionPolicy Bypass -NoProfile -Command `"$script`"" -Verb RunAs
+    } else {
+        Start-Process $processCmd -ArgumentList "-ExecutionPolicy Bypass -NoProfile -Command `"$script`"" -Verb RunAs
+    }
+
+    break
 }
 
 $REPO_URL = "https://github.com/nikannixro/kaelix.git"
@@ -46,10 +43,28 @@ $REPO_NAME = "kaelix"
 # --- Banner -------------------------------------------------------------------
 
 function Show-Banner {
-    Write-Host ""
-    Write-Host "=========================================" -ForegroundColor Green
-    Write-Host "            K A E L I X" -ForegroundColor Green
-    Write-Host "=========================================" -ForegroundColor Green
+    $width = 80
+    $height = 24
+    try {
+        if ($Host.UI.RawUI.WindowSize.Width -gt 0) { $width = $Host.UI.RawUI.WindowSize.Width }
+        if ($Host.UI.RawUI.WindowSize.Height -gt 0) { $height = $Host.UI.RawUI.WindowSize.Height }
+    } catch { }
+
+    $banner = @(
+        "=========================================",
+        "            K A E L I X",
+        "========================================="
+    )
+
+    $maxLen = ($banner | Measure-Object -Property Length -Maximum).Maximum
+    $bannerHeight = $banner.Count + 2
+    $topPad = [Math]::Max(0, [int](($height - $bannerHeight) / 2))
+    $leftPad = " " * [Math]::Max(0, [int](($width - $maxLen) / 2))
+
+    for ($i = 0; $i -lt $topPad; $i++) { Write-Host "" }
+    foreach ($line in $banner) {
+        Write-Host "${leftPad}${line}" -ForegroundColor Green
+    }
     Write-Host ""
 }
 

@@ -19,10 +19,18 @@ NC='\033[0m'
 # --- Output helpers -----------------------------------------------------------
 
 banner() {
-    echo ""
-    echo -e "${GREEN}=========================================${NC}"
-    echo -e "${GREEN}            K A E L I X${NC}"
-    echo -e "${GREEN}=========================================${NC}"
+    local width=$(tput cols 2>/dev/null || echo 80)
+    local height=$(tput lines 2>/dev/null || echo 24)
+    local max_len=41
+    local banner_height=5
+    local top_pad=$(( (height - banner_height) / 2 ))
+    local left_pad=$(printf '%*s' $(( (width - max_len) / 2 )) '')
+    local i
+
+    for ((i = 0; i < top_pad; i++)); do echo ""; done
+    echo -e "${GREEN}${left_pad}=========================================${NC}"
+    echo -e "${GREEN}${left_pad}            K A E L I X${NC}"
+    echo -e "${GREEN}${left_pad}=========================================${NC}"
     echo ""
 }
 

@@ -32,3 +32,7 @@ kaelix = "src.main:main"
 Homepage = "https://github.com/nikannixro/kaelix"
 Repository = "https://github.com/nikannixro/kaelix"
 Issues = "https://github.com/nikannixro/kaelix/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
