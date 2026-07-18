@@ -44,7 +44,7 @@ tracks, and renames files to a consistent release-style naming convention.
 **Linux / WSL / macOS:**
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/nikannixro/kaelix/main/install.sh)
+bash <(curl -Ls https://kaelix.pages.dev/install.sh)
 ```
 
 **Windows:**
@@ -52,7 +52,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/nikannixro/kaelix/main/install
 Open **PowerShell** and run:
 
 ```powershell
-irm https://raw.githubusercontent.com/nikannixro/kaelix/main/install.ps1 | iex
+irm https://kaelix.pages.dev/install.ps1 | iex
 ```
 
 ### 2. Run
