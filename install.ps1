@@ -4,37 +4,6 @@
 $ErrorActionPreference = "Continue"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-# --- Auto-Elevation (WinUtil pattern) -----------------------------------------
-
-if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    $argList = @()
-
-    $PSBoundParameters.GetEnumerator() | ForEach-Object {
-        $argList += if ($_.Value -is [switch] -and $_.Value) {
-            "-$($_.Key)"
-        } elseif ($_.Value -is [array]) {
-            "-$($_.Key) $($_.Value -join ',')"
-        } elseif ($_.Value) {
-            "-$($_.Key) '$($_.Value)'"
-        }
-    }
-
-    $script = if ($PSCommandPath) {
-        "& { & `'$($PSCommandPath)`' $($argList -join ' ') }"
-    } else {
-        "&([ScriptBlock]::Create((irm https://raw.githubusercontent.com/nikannixro/kaelix/main/install.ps1))) $($argList -join ' ')"
-    }
-
-    $powershellCmd = if (Get-Command pwsh -ErrorAction SilentlyContinue) {
-        (Get-Command pwsh).Source
-    } else {
-        "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
-    }
-    Start-Process $powershellCmd -ArgumentList "-ExecutionPolicy Bypass -NoProfile -Command `"$script`"" -Verb RunAs
-
-    break
-}
-
 $REPO_URL = "https://github.com/nikannixro/kaelix.git"
 $REPO_NAME = "kaelix"
 
