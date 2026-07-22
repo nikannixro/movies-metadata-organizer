@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 import argparse
+import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 from .config import Config
@@ -20,6 +23,105 @@ from .utils.validators import ValidationError, validate_ffprobe_available, valid
 
 log = get_logger(__name__)
 
+REPO_URL = "https://github.com/nikannixro/kaelix.git"
+
+
+# --- Version and update check ------------------------------------------------
+
+def get_current_version() -> str | None:
+    """Parse version from pyproject.toml."""
+    try:
+        import tomllib
+        pyproject_path = Path(__file__).resolve().parent.parent / "pyproject.toml"
+        with open(pyproject_path, "rb") as f:
+            data = tomllib.load(f)
+        return data["project"]["version"]
+    except Exception:
+        return None
+
+
+def check_for_updates() -> str | None:
+    """Check GitHub for a newer version. Returns latest tag if different, else None."""
+    current = get_current_version()
+    if not current:
+        return None
+    try:
+        result = subprocess.run(
+            ["git", "ls-remote", "--tags", REPO_URL],
+            capture_output=True, text=True, timeout=10
+        )
+        if result.returncode == 0:
+            tags = [
+                line.split("refs/tags/")[-1]
+                for line in result.stdout.strip().split("\n")
+                if "refs/tags/" in line
+            ]
+            if tags:
+                latest = max(tags)
+                if latest != current:
+                    return latest
+    except Exception:
+        pass
+    return None
+
+
+# --- Uninstall and upgrade ---------------------------------------------------
+
+def uninstall_kaelix() -> int:
+    """Uninstall Kaelix and remove repository."""
+    print("Uninstalling Kaelix...")
+
+    # Remove pip package
+    subprocess.run(
+        [sys.executable, "-m", "pip", "uninstall", "kaelix", "-y"],
+        capture_output=True
+    )
+
+    # Remove repository if it exists in current directory
+    repo_dir = Path.cwd() / "kaelix"
+    if repo_dir.exists() and (repo_dir / ".git").exists():
+        shutil.rmtree(repo_dir)
+        print(f"  Removed {repo_dir}")
+
+    # Remove log directory
+    log_dir = Path.home() / ".kaelix"
+    if log_dir.exists():
+        shutil.rmtree(log_dir)
+        print(f"  Removed {log_dir}")
+
+    print("Kaelix uninstalled.")
+    return 0
+
+
+def upgrade_kaelix() -> int:
+    """Update Kaelix to the latest version via git pull."""
+    print("Updating Kaelix...")
+
+    repo_dir = Path.cwd() / "kaelix"
+    if not repo_dir.exists() or not (repo_dir / ".git").exists():
+        print("Repository not found. Run the install script first.")
+        return 1
+
+    # Git pull
+    result = subprocess.run(
+        ["git", "-C", str(repo_dir), "pull"],
+        capture_output=True, text=True
+    )
+    if result.returncode != 0:
+        print("Failed to pull updates.")
+        return 1
+
+    # Reinstall package
+    subprocess.run(
+        [sys.executable, "-m", "pip", "install", "-e", str(repo_dir)],
+        capture_output=True
+    )
+
+    print("Kaelix updated successfully.")
+    return 0
+
+
+# --- Argument parser ---------------------------------------------------------
 
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
@@ -69,8 +171,20 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--ffprobe",
         help="Explicit path to ffprobe binary (default: search PATH).",
     )
+    parser.add_argument(
+        "--uninstall", "-uninstall",
+        action="store_true",
+        help="Uninstall Kaelix and remove repository.",
+    )
+    parser.add_argument(
+        "--upgrade", "-upgrade",
+        action="store_true",
+        help="Update Kaelix to the latest version.",
+    )
     return parser
 
+
+# --- Config helpers ----------------------------------------------------------
 
 def gather_config_interactive() -> Config:
     """Prompt the user for all configuration values."""
@@ -109,13 +223,28 @@ def gather_config_from_args(args: argparse.Namespace) -> Config:
     )
 
 
+# --- Entry point -------------------------------------------------------------
+
 def run(args_list: list[str] | None = None) -> int:
     parser = build_arg_parser()
     args = parser.parse_args(args_list)
 
+    # Handle uninstall
+    if args.uninstall:
+        return uninstall_kaelix()
+
+    # Handle upgrade
+    if args.upgrade:
+        return upgrade_kaelix()
+
+    # Check for updates (every run)
+    latest = check_for_updates()
+    if latest:
+        print(f"\n  ⚠ A new version ({latest}) is available.")
+        print(f"  Run 'kaelix --upgrade' to update.\n")
+
     project_root = Path(__file__).resolve().parent.parent
-    log_dir = Path.home() / ".kaelix" / "logs"
-    log_path = setup_logging(log_dir)
+    log_path = setup_logging(project_root / "logs")
 
     # Resolve binaries first (fail fast before prompting the user).
     try:
